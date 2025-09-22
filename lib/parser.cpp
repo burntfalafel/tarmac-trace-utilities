@@ -78,10 +78,24 @@ struct Token {
     char c;   // '\0' if this is a word/EOL, otherwise a single punct character
     string s; // if c == '\0', the text of the word, or "" for EOL
 
+    bool is_lex_error = false;
     Token() : c('\0'), s("") {}
     Token(char c) : c(c), s("") {}
     Token(const string &s) : c('\0'), s(s) {}
 
+    inline bool isLexError()
+    {
+        return is_lex_error;
+    }
+
+    inline Token &retIsLexError()
+    {
+        c = '\0';
+        s = "";
+        startpos = endpos = 0;
+        is_lex_error = true;
+        return *this;
+    }
     inline Token &setpos(size_t start, size_t end)
     {
         startpos = start;
@@ -218,6 +232,7 @@ class TarmacLineParserImpl {
     set<string> unrecognised_system_operations_reported;
     set<string> unrecognised_tarmac_events_reported;
     ParseReceiver *receiver;
+    vector<string> errors;
     InterLineState next_line;
 
     static set<string> known_timestamp_units;
@@ -242,16 +257,29 @@ class TarmacLineParserImpl {
         highlight(tok.startpos, tok.endpos, cl);
     }
 
-    [[noreturn]] void lex_error(size_t pos) {
+    Token lex_error(size_t pos) {
         highlight(pos, line.size(), HL_ERROR);
         ostringstream os;
-        os << "Unrecognised token" << endl;
-        os << line << endl;
-        os << string(pos, ' ') << "^" << endl;
-        throw TarmacParseError(os.str());
+        errors.push_back("Unrecognised token");
+        errors.push_back(line);
+        errors.push_back(string(pos, ' ') + "^");
+        // throw TarmacParseError(os.str());
+        return Token();
+
     }
 
     void parse_error(const Token &tok, string msg)
+    {
+        highlight(tok, HL_ERROR);
+        ostringstream os;
+        os << msg << endl;
+        os << line << endl;
+        os << string(tok.startpos, ' ')
+           << string(max((size_t)1, tok.endpos - tok.startpos), '^') << endl;
+        throw TarmacParseError(os.str());
+    };
+
+    void no_throw_parse_error(const Token &tok, string msg)
     {
         highlight(tok, HL_ERROR);
         ostringstream os;
@@ -306,7 +334,7 @@ class TarmacLineParserImpl {
         }
 
         // Failing that too, we have an error.
-        lex_error(pos);
+        return lex_error(pos);
     }
 
     static bool parse_iset_state(const Token &tok, ISet *output)
@@ -351,6 +379,10 @@ class TarmacLineParserImpl {
 
         // Fetch the first token.
         Token tok = lex();
+        if (tok.isLexError()) {
+            errors.push_back(_("Lexical error"));
+            return;
+        }
 
         // Tarmac lines often, but not always, start with a timestamp.
         // If they don't, we default to the previous timestamp.
@@ -407,6 +439,9 @@ class TarmacLineParserImpl {
                 }
             }
         }
+        // skipping token can be a possibility for some lines
+        bool skip_token = false;
+
         next_line.timestamp = time;
 
         // Now we can have a trace source identifier (cpu or other component)
@@ -1306,14 +1341,20 @@ class TarmacLineParserImpl {
                 if (!unrecognised_tarmac_events_reported.count(type)) {
                     unrecognised_tarmac_events_reported.insert(type);
                     warning(format(_("unknown Tarmac event type '{}'"), type));
+                    skip_token = true;
                 }
             }
 
-            tok = lex();
-            highlight(tok.startpos, line.size(), HL_TEXT_EVENT);
+            if (!skip_token) {
+                tok = lex();
+                highlight(tok.startpos, line.size(), HL_TEXT_EVENT);
 
-            TextOnlyEvent ev(time, type, line.substr(tok.startpos));
-            receiver->got_event(ev);
+                if (tok.s == "")
+                    return; // nothing more on the line
+                TextOnlyEvent ev(time, type, line.substr(tok.startpos));
+                receiver->got_event(ev);
+            }
+            skip_token = false;
         }
     }
 };

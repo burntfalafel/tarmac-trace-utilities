@@ -84,6 +84,12 @@ To build the tools, run the following commands:
   cmake --build .
 
 (There are many other ways to invoke CMake, but this is the simplest.)
+For debug builds
+
+::
+
+    cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 .
+
 
 Usage
 -----
