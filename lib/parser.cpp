@@ -778,6 +778,8 @@ class TarmacLineParserImpl {
                           !strncasecmp(regname.c_str(), "sp_", 3));
             bool special = is_fpcr || is_sp || is_cpsr;
 
+            bool get_sysreg_id = lookup_sysreg_name(reg, regname);
+
             bool got_reg_subrange = false;
             unsigned reg_subrange_skip_lo, reg_subrange_skip_hi;
             if (tok == '<') {

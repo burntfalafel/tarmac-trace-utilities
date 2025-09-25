@@ -24,7 +24,7 @@ endif()
 
 add_library(tarmac
   argparse.cpp btod.cpp callinfo.cpp calltree.cpp elf.cpp expr.cpp format.cpp
-  image.cpp index.cpp index_ds.cpp misc.cpp parser.cpp registers.cpp
+  image.cpp index.cpp index_ds.cpp misc.cpp parser.cpp registers.cpp systemregisters.cpp
   tarmacutil.cpp ${platform_sources})
 
 set(LIBTARMAC_HEADERS
@@ -32,7 +32,7 @@ set(LIBTARMAC_HEADERS
   "${CMAKE_BINARY_DIR}/include/libtarmac/cmake.h")
 foreach(H argparse.hh callinfo.hh calltree.hh disktree.hh elf.hh expr.hh
     image.hh index.hh index_ds.hh memtree.hh misc.hh parser.hh registers.hh
-    reporter.hh tarmacutil.hh)
+    reporter.hh tarmacutil.hh third_party/rapid_csv.h)
     list(APPEND LIBTARMAC_HEADERS ${CMAKE_SOURCE_DIR}/include/libtarmac/${H})
 endforeach()
 set_target_properties(tarmac PROPERTIES PUBLIC_HEADER "${LIBTARMAC_HEADERS}")

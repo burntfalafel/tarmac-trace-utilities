@@ -1042,6 +1042,9 @@ bool Index::read_one_trace_line()
         return false;
     }
 
+    // TODO: make this parametrised
+    read_sysreg_names_csv("./test.csv");
+
     try {
         parser.parse(line);
     } catch (TarmacParseError e) {

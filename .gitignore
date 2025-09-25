@@ -29,6 +29,7 @@
 /tarmac-*
 /parsertest
 /exprtest
+build/
 
 # Likely debris from building in the doc directory
 /doc/build
