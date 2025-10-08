@@ -778,7 +778,7 @@ class TarmacLineParserImpl {
                           !strncasecmp(regname.c_str(), "sp_", 3));
             bool special = is_fpcr || is_sp || is_cpsr;
 
-            bool get_sysreg_id = lookup_sysreg_name(reg, regname);
+            bool is_sysreg = lookup_sysreg_name(regname);
 
             bool got_reg_subrange = false;
             unsigned reg_subrange_skip_lo, reg_subrange_skip_hi;
@@ -892,6 +892,29 @@ class TarmacLineParserImpl {
                 }
                 if (got_reg_subrange)
                     contents.append(2 * reg_subrange_skip_lo, '-');
+            } else if (is_sysreg) {
+                // TODO: support variable arguments
+                // if (got_reg_subrange) {
+                //     contents.append(2 * reg_subrange_skip_hi, '-');
+                // }
+                size_t data_start_pos = contents.size();
+                // harcoded to 64 bits sysreg value max atm
+                while (contents.size() < 64) {
+                    if (tok.iseol()) {
+                        // Special case: if the line ends with fewer
+                        // hex digits than expected, but all the
+                        // digits we've seen are zero, then we assume
+                        // that the Tarmac producer abbreviated a zero
+                        // value on the grounds that it was boring.
+                        break;
+                    }
+                    if (!tok.isregvalue())
+                        break;
+                    consume_register_contents(tok);
+                    tok = lex();
+                    if (tok == ':')
+                        tok = lex();
+                }
             } else if (special) {
                 // Special cases described above, where we have to wait to see
                 // how much data we can get out of the input line.

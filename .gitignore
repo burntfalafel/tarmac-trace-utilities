@@ -30,6 +30,7 @@
 /parsertest
 /exprtest
 build/
+test.log
 
 # Likely debris from building in the doc directory
 /doc/build

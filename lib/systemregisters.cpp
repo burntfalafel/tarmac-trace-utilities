@@ -65,54 +65,26 @@ static inline bool compare(const char *a, size_t alen, const char *b,
 }
 
 #define STRINGWITHLEN(s) s, sizeof(s) - 1
+
+std::vector <std::string> sysreg_names{};
+
 bool read_sysreg_names_csv(string path)
 {
     rapidcsv::Document doc(path, rapidcsv::LabelParams(0, -1));
-    std::vector<std::string> names = doc.GetRow<std::string>(0);
+    sysreg_names = doc.GetColumnNames();
     return true;
 }
 
-bool lookup_sysreg_name(RegisterId &out, const string &name)
+bool lookup_sysreg_name(const string &name)
 {
+    // is general-purpose reg
     if (name.size() < 4)
-        // is general-purpose reg
         return false;
 
-    const char *prefix = name.c_str();
-    const char *suffix = prefix + strcspn(prefix, "0123456789_");
+    // no system register loaded in csv
+    if (sysreg_names.size() == 0)
+        return false;
 
-    for (size_t i = 0; i < lenof(reg_prefixes); i++) {
-        if (i == (size_t)RegPrefix::internal_flags)
-            continue; // this isn't a real register name
-
-        const RegPrefixInfo &pfx = reg_prefixes[i];
-        if (compare(prefix, suffix - prefix, pfx.name, pfx.namelen)) {
-            unsigned long index = 0;
-            if (!*suffix) {
-                /*
-                 * Accept a register name without a numeric suffix
-                 * only if the register class is a singleton.
-                 */
-                if (pfx.n != 1)
-                    continue;
-                index = 0;
-            } else {
-                /*
-                 * Accept a register name _with_ a numeric suffix only
-                 * if the register class is _not_ a singleton.
-                 * Moreover, the suffix should be in range.
-                 */
-                if (pfx.n == 1)
-                    continue;
-                index = strtoul(suffix, NULL, 10);
-                if (index >= pfx.n)
-                    continue;
-            }
-            out.prefix = RegPrefix(i);
-            out.index = index;
-            return true;
-        }
-    }
-
-    return false;
+    return std::find(sysreg_names.begin(), sysreg_names.end(), name) != sysreg_names.end();
 }
+

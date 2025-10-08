@@ -131,6 +131,6 @@ extern const RegisterId REG_64_x1;
 
 // System register stuff
 bool read_sysreg_names_csv(std::string path);
-bool lookup_sysreg_name(RegisterId &out, const std::string &name);
+bool lookup_sysreg_name(const std::string &name);
 
 #endif // LIBTARMAC_REGISTERS_HH
