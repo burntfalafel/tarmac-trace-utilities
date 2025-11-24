@@ -57,19 +57,18 @@ struct Symbol {
 };
 
 struct Segment {
+    unsigned index;
     Addr addr;
-    size_t size;
+    size_t memsize;
+    size_t filesize;
     bool executable;
     bool writable;
     bool readable;
 
-    // Get a friendly kind name for the segment kind.
-    const char *getKindName() const;
-
-    Segment(Addr addr, size_t size, bool readable, bool writable,
-            bool executable)
-        : addr(addr), size(size), writable(writable), executable(executable),
-          readable(readable)
+    Segment(unsigned index, Addr addr, size_t memsize, size_t filesize,
+            bool readable, bool writable, bool executable)
+        : index(index), addr(addr), memsize(memsize), filesize(filesize),
+          writable(writable), executable(executable), readable(readable)
     {
     }
 };
@@ -114,6 +113,7 @@ class Image {
     }
 
     std::vector<Segment> get_segments(bool use_paddr = false) const;
+    std::vector<uint8_t> get_segment_content(const Segment &segment) const;
 
     Image(const std::string &image_filename);
     ~Image();
