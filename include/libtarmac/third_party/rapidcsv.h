@@ -20,6 +20,7 @@
 #include <codecvt>
 #include <locale>
 #endif
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -1505,6 +1506,10 @@ namespace rapidcsv
     void ReadCsv()
     {
       std::ifstream stream;
+      if (std::filesystem::exists(mPath) == false)
+      {
+        throw std::runtime_error("file not found: " + mPath);
+      }
       stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
       stream.open(mPath, std::ios::binary);
       ReadCsv(stream);
